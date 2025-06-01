@@ -1,0 +1,45 @@
+<!-- Main Navbar -->
+<nav class="main-header navbar navbar-expand bg-gradient-primary navbar-dark">
+
+  <!-- Left navbar links -->
+  <ul class="navbar-nav">
+    <!-- Sidebar toggle button -->
+    <li class="nav-item">
+      <a class="nav-link text-white" data-widget="pushmenu" href="#" role="button">
+        <i class="fas fa-bars"></i>
+      </a>
+    </li>
+
+    <!-- Home -->
+    <li class="nav-item d-none d-sm-inline-block">
+      <a href="/index" class="nav-link text-white">
+        <i class="fas fa-home me-1"></i> Home
+      </a>
+    </li>
+
+    <!-- User Profile -->
+    <li class="nav-item d-none d-sm-inline-block">
+      <a href="{{ url_for('authentication_blueprint.edit_user_profile', id=session['id']) }}" class="nav-link text-white">
+        <i class="fas fa-user me-1"></i> Profile
+      </a>
+    </li>
+
+    <!-- Role Display -->
+    <li class="nav-item d-none d-sm-inline-block">
+      <span class="nav-link text-white">
+        <i class="fas fa-user-tag me-1"></i> Role: {{ session['role'] }}
+      </span>
+    </li>
+  </ul>
+
+  <!-- Right navbar links -->
+  <ul class="navbar-nav ml-auto">
+    <!-- Example: Logout -->
+    <li class="nav-item">
+      <a href="/logout" class="nav-link text-white">
+        <i class="fas fa-sign-out-alt me-1"></i> Logout
+      </a>
+    </li>
+  </ul>
+</nav>
+<!-- /.navbar -->
