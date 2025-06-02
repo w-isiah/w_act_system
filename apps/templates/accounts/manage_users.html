@@ -75,7 +75,8 @@
     <div class="container-fluid">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h3 class="card-title mb-0">Section List</h3>
+          <h3 class="card-title mb-0">
+          Users List</h3>
           <a href="/add_user" class="btn btn-sm btn-primary">
             <i class="fas fa-plus-circle"></i> Add a User
           </a>
@@ -150,22 +151,12 @@
   $(document).ready(function () {
     // Initialize DataTables with options
     $('#userTable').DataTable({
+      fixedColumns: { left: 1, right: 1 },
+      paging: false,
       scrollX: true,
+      scrollY: '300px',
       scrollCollapse: true,
-      responsive: true,
-      fixedColumns: { leftColumns: 1 },
-      paging: true,
-      stateSave: true,
-      language: {
-        search: "Search:",
-        emptyTable: "No users found",
-        info: "Showing _START_ to _END_ of _TOTAL_ users",
-        lengthMenu: "Show _MENU_ users",
-        paginate: {
-          next: "Next",
-          previous: "Previous"
-        }
-      }
+      stateSave: true
     });
 
     // Update a single user's online status via AJAX
