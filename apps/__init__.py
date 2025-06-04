@@ -16,7 +16,7 @@ def register_extensions(app):
 
 def register_blueprints(app):
     """Dynamically register blueprints from the apps module."""
-    modules = ['authentication', 'home','subscriptions']
+    modules = ['authentication', 'home','subscriptions','subscription_plans','file_upload','application','system']
     for module_name in modules:
         module = import_module(f'apps.{module_name}.routes')
         app.register_blueprint(module.blueprint)

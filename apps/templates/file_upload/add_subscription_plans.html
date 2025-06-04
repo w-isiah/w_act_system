@@ -1,0 +1,125 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Add Subscription Plan{% endblock %}
+
+{% block body_class %}sidebar-mini layout-fixed layout-footer-fixed{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+<link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
+<link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
+<style>
+  .alert-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: 90%;
+    display: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="alert-container" id="flashMessageContainer">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <strong>{{ message }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Content Header -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6"><h1>Add Subscription Plan</h1></div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+            <li class="breadcrumb-item"><a href="/subscription_plans">Subscription Plans</a></li>
+            <li class="breadcrumb-item active">Add Subscription Plan</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Form Section -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-primary">
+        <div class="card-header"><h3 class="card-title">Create a New Subscription Plan</h3></div>
+
+        <form action="{{ url_for('subscription_plans_blueprint.add_subscription_plan') }}" method="POST">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+          <div class="card-body">
+
+            <!-- Plan Name -->
+            <div class="form-group">
+              <label for="name">Plan Name</label>
+              <input type="text" name="name" id="name" class="form-control" placeholder="Enter Plan Name" required>
+            </div>
+
+            <!-- Price -->
+            <div class="form-group">
+              <label for="price">Price (e.g., 9.99)</label>
+              <input type="number" step="0.01" min="0" name="price" id="price" class="form-control" value="0.00" required>
+            </div>
+
+            <!-- Billing Cycle -->
+            <div class="form-group">
+              <label for="billing_cycle">Billing Cycle</label>
+              <input type="text" name="billing_cycle" id="billing_cycle" class="form-control" placeholder="Monthly, Yearly, etc." required>
+            </div>
+
+            <!-- Duration In Days -->
+            <div class="form-group">
+              <label for="duration_in_days">Duration (Days)</label>
+              <input type="number" min="1" name="duration_in_days" id="duration_in_days" class="form-control" placeholder="e.g., 30" required>
+            </div>
+
+            <!-- Is Active -->
+            <div class="form-group">
+              <label for="is_active">Is Active?</label>
+              <select name="is_active" id="is_active" class="form-control" required>
+                <option value="1" selected>Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="card-footer">
+            <button type="submit" class="btn btn-success">Save</button>
+            <a href="{{ url_for('subscription_plans_blueprint.subscription_plans') }}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="/static/assets/plugins/jquery/jquery.min.js"></script>
+<script src="/static/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/static/assets/js/adminlte.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('#flashMessageContainer').fadeIn(300).delay(3000).fadeOut(1000);
+  });
+</script>
+{% endblock %}

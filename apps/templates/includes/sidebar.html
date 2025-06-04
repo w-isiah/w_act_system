@@ -77,27 +77,65 @@
              class="nav-link {% if 'results' in segment %}active{% endif %}">
             <i class="nav-icon fas fa-poll"></i>
             <p>
-              Item
+              Application
               <i class="right fas fa-angle-left"></i>
             </p>
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item">
-              <a href="#"
+              <a href="{{ url_for('application_blueprint.application') }}"
                  class="nav-link {% if 'results_index' in segment %}active{% endif %}">
                 <i class="fas fa-chart-line nav-icon"></i>
-                <p>Item</p>
+                <p>View Keys</p>
               </a>
             </li>
             <li class="nav-item">
-              <a href="#"
+              <a href="{{ url_for('application_blueprint.add_activation_key') }}"
                  class="nav-link {% if 'upload_results' in segment %}active{% endif %}">
                 <i class="fas fa-upload nav-icon"></i>
-                <p>Item</p>
+                <p>Add Keys </p>
               </a>
             </li>
           </ul>
         </li>
+
+
+         <!-- Add more sections below as needed -->
+        <!-- Example: Results -->
+        <li class="nav-item {% if 'results' in segment %}menu-open{% endif %}">
+          <a href="#"
+             class="nav-link {% if 'results' in segment %}active{% endif %}">
+            <i class="nav-icon fas fa-poll"></i>
+            <p>
+              Systems Information
+              <i class="right fas fa-angle-left"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{ url_for('application_blueprint.computer_info') }}"
+                 class="nav-link {% if 'results_index' in segment %}active{% endif %}">
+                <i class="fas fa-chart-line nav-icon"></i>
+                <p>View Infor</p>
+              </a>
+            </li>
+            <li class="nav-item">
+             
+
+              <li class="nav-item">
+              <a href="{{ url_for('system_blueprint.device_control') }}"
+                 class="nav-link {% if 'upload_results' in segment %}active{% endif %}">
+                <i class="fas fa-upload nav-icon"></i>
+                <p> Device_control </p>
+              </a>
+            </li>
+
+
+            </li>
+          </ul>
+        </li>
+
+
 
         <!-- Add more menu items below -->
 

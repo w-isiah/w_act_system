@@ -17,29 +17,33 @@ from jinja2 import TemplateNotFound
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# View all users for subscription control
 @blueprint.route('/manage_subscriptions')
 def manage_subscriptions():
     users = []
+    subscription_plans = []
+
     try:
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
 
-        query = """
+        # Fetch subscription plans
+        cursor.execute("""
+            SELECT 
+                plan_id,
+                name,
+                price,
+                billing_cycle,
+                duration_in_days,
+                is_active,
+                created_at,
+                updated_at,
+                user_id
+            FROM subscription_plans
+        """)
+        subscription_plans = cursor.fetchall()
+
+        # Fetch users and their subscription info
+        cursor.execute("""
             SELECT 
                 u.id AS user_id,
                 u.username,
@@ -47,68 +51,99 @@ def manage_subscriptions():
                 u.email,
                 IFNULL(s.status, 'not_subscribed') AS status,
                 s.subscribed_at,
-                s.unsubscribed_at
+                s.unsubscribed_at,
+                sp.name AS plan_name,
+                sp.price AS plan_price,
+                sp.billing_cycle,
+                sp.duration_in_days
             FROM users u
             LEFT JOIN subscriptions s ON s.user_id = u.id
+            LEFT JOIN subscription_plans sp ON s.subscription_plan_id = sp.plan_id
             WHERE u.role != 'admin'
-        """
-        cursor.execute(query)
+        """)
         users = cursor.fetchall()
 
     except Exception as e:
-        flash(f"Error loading users: {str(e)}", "danger")
+        flash(f"Error loading subscriptions: {str(e)}", "danger")
     finally:
-        if cursor: cursor.close()
-        if connection: connection.close()
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
-    return render_template('subscriptions/manage_subscriptions.html', users=users)
-
-
-
-
-
-
+    return render_template('subscriptions/manage_subscriptions.html', 
+                           subscription_plans=subscription_plans,
+                           users=users)
 
 
-# Toggle subscription
+
+
+
 @blueprint.route('/toggle_subscription/<int:user_id>', methods=['POST'])
 def toggle_subscription(user_id):
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Check if subscription exists
+        # Check if subscription exists for user
         cursor.execute("SELECT id, status FROM subscriptions WHERE user_id = %s", (user_id,))
         record = cursor.fetchone()
 
+        # Extract selected subscription plan from form data (if any)
+        selected_plan_id = None
+        if 'subscription_plan_id' in request.form:
+            selected_plan_id = request.form.get('subscription_plan_id')
+            if selected_plan_id == '':
+                selected_plan_id = None
+
         if record:
             sub_id, current_status = record
-            if current_status == 'subscribed':
-                # Unsubscribe
-                cursor.execute("""
-                    UPDATE subscriptions
-                    SET status = 'not_subscribed', unsubscribed_at = NOW()
-                    WHERE id = %s
-                """, (sub_id,))
-            else:
-                # Subscribe
-                cursor.execute("""
-                    UPDATE subscriptions
-                    SET status = 'subscribed', subscribed_at = NOW(), unsubscribed_at = NULL
-                    WHERE id = %s
-                """, (sub_id,))
-        else:
-            # Create subscription if it doesn't exist
-            cursor.execute("""
-                INSERT INTO subscriptions (user_id, status, subscribed_at)
-                VALUES (%s, 'subscribed', NOW())
-            """, (user_id,))
 
-        connection.commit()
-        flash("Subscription updated successfully.", "success")
+            if current_status == 'subscribed':
+                # Deactivate subscription: clear plan and mark unsubscribed
+                cursor.execute("""
+                    UPDATE subscriptions
+                    SET status = 'not_subscribed',
+                        unsubscribed_at = NOW(),
+                        subscription_plan_id = NULL
+                    WHERE id = %s
+                """, (sub_id,))
+                connection.commit()
+                flash("Subscription deactivated successfully.", "success")
+
+            else:
+                # Activate subscription - require plan selection
+                if not selected_plan_id:
+                    flash("Please activate with a subscription plan.", "warning")
+                    return redirect(url_for('subscriptions_blueprint.manage_subscriptions'))
+
+                cursor.execute("""
+                    UPDATE subscriptions
+                    SET status = 'subscribed',
+                        subscribed_at = NOW(),
+                        unsubscribed_at = NULL,
+                        subscription_plan_id = %s
+                    WHERE id = %s
+                """, (selected_plan_id, sub_id))
+                connection.commit()
+                flash("Subscription activated successfully.", "success")
+
+        else:
+            # No subscription exists - create new if plan selected
+            if not selected_plan_id:
+                flash("Please activate with a subscription plan.", "warning")
+                return redirect(url_for('subscriptions_blueprint.manage_subscriptions'))
+
+            cursor.execute("""
+                INSERT INTO subscriptions (user_id, status, subscribed_at, subscription_plan_id)
+                VALUES (%s, 'subscribed', NOW(), %s)
+            """, (user_id, selected_plan_id))
+            connection.commit()
+            flash("Subscription created and activated successfully.", "success")
 
     except Exception as e:
         flash(f"Error updating subscription: {str(e)}", "danger")
+
     finally:
         if cursor: cursor.close()
         if connection: connection.close()
@@ -116,6 +151,49 @@ def toggle_subscription(user_id):
     return redirect(url_for('subscriptions_blueprint.manage_subscriptions'))
 
 
+
+
+
+
+
+
+@blueprint.route('/change_plan/<int:user_id>', methods=['POST'])
+def change_plan(user_id):
+    try:
+        subscription_plan_id = request.form.get('subscription_plan_id', type=int)
+        if not subscription_plan_id:
+            flash("Please select a valid subscription plan.", "warning")
+            return redirect(url_for('subscriptions_blueprint.manage_subscriptions'))
+
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        # Ensure user has a subscription and is subscribed
+        cursor.execute("SELECT id, status FROM subscriptions WHERE user_id = %s", (user_id,))
+        subscription = cursor.fetchone()
+
+        if not subscription or subscription['status'] != 'subscribed':
+            flash("User does not have an active subscription to update.", "warning")
+            return redirect(url_for('subscriptions_blueprint.manage_subscriptions'))
+
+        # Update subscription plan only
+        cursor.execute("""
+            UPDATE subscriptions
+            SET subscription_plan_id = %s
+            WHERE id = %s
+        """, (subscription_plan_id, subscription['id']))
+
+        connection.commit()
+        flash("Subscription plan updated successfully.", "success")
+
+    except Exception as e:
+        flash(f"Error updating subscription plan: {str(e)}", "danger")
+
+    finally:
+        if cursor: cursor.close()
+        if connection: connection.close()
+
+    return redirect(url_for('subscriptions_blueprint.manage_subscriptions'))
 
 
 
@@ -147,6 +225,114 @@ def delete_subscriptions(subscriptions_id):
         connection.close()
 
     return redirect(url_for('subscriptions_blueprint.subscriptions'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+@blueprint.route('/subscriptions_status')
+def subscriptions_status():
+    current_user_id = session.get('id')
+    current_user_subscription = None
+
+    if not current_user_id:
+        flash("You must be logged in to view your subscription.", "danger")
+        return redirect(url_for("auth_blueprint.login"))  # adjust route name if different
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        # Fetch the current user's subscription info
+        cursor.execute("""
+            SELECT 
+                s.status,
+                s.subscribed_at,
+                s.unsubscribed_at,
+                sp.name AS plan_name,
+                sp.price AS plan_price,
+                sp.billing_cycle,
+                sp.duration_in_days
+            FROM subscriptions s
+            JOIN subscription_plans sp ON s.subscription_plan_id = sp.plan_id
+            WHERE s.user_id = %s
+            ORDER BY s.subscribed_at DESC
+            LIMIT 1
+        """, (current_user_id,))
+        current_user_subscription = cursor.fetchone()
+
+    except Exception as e:
+        flash(f"Error fetching subscription: {str(e)}", "danger")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+    return render_template(
+        'subscriptions/subscriptions_status.html',
+        current_user_subscription=current_user_subscription
+    )
+
+
+
+
+
+
+
+
+
+
+@blueprint.route('/download_exe')
+def download_exe():
+    user_id = session.get('id')
+    if not user_id:
+        flash("Please log in first.", "danger")
+        return redirect(url_for("auth_blueprint.login"))
+
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT status FROM subscriptions
+            WHERE user_id = %s AND status = 'active'
+        """, (user_id,))
+        subscription = cursor.fetchone()
+
+        if not subscription:
+            flash("You must have an active subscription to download this file.", "warning")
+            return redirect(url_for('file_upload_blueprint.file_upload'))
+
+        # Assuming file is stored in configured folder
+        exe_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads/exe_files')
+        latest_file = next((f for f in os.listdir(exe_folder) if f.endswith('.exe')), None)
+
+        if latest_file:
+            return send_from_directory(directory=exe_folder, path=latest_file, as_attachment=True)
+        else:
+            flash("No executable file available for download.", "danger")
+            return redirect(url_for('file_upload_blueprint.file_upload'))
+
+    except Exception as e:
+        flash(f"Download failed: {e}", "danger")
+        return redirect(url_for('file_upload_blueprint.file_upload'))
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+
 
 
 

@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}My Subscription{% endblock %}
+{% block body_class %}sidebar-mini layout-fixed{% endblock %}
+
+{% block stylesheets %}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
+  <link rel="stylesheet" href="/static/assets/css/mine.css">
+
+  <style>
+    #flash-container {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      z-index: 1055;
+      min-width: 300px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+  <!-- Flash Messages -->
+  <div id="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Page Header -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2 align-items-center">
+        <div class="col-sm-6">
+          <h1 class="m-0 text-dark">My Subscription</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="/index">Home</a></li>
+            <li class="breadcrumb-item active">Subscription</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subscription Info -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-info">
+        <div class="card-header">
+          <h3 class="card-title">Subscription Details</h3>
+        </div>
+        <div class="card-body">
+          {% if current_user_subscription %}
+            <p>
+              <strong>Status:</strong>
+              <span class="badge badge-{{ 'success' if current_user_subscription.status == 'active' else 'secondary' }}">
+                {{ current_user_subscription.status | capitalize }}
+              </span>
+            </p>
+            <p><strong>Plan:</strong> {{ current_user_subscription.plan_name }}</p>
+            <p><strong>Price:</strong> ${{ current_user_subscription.plan_price }}</p>
+            <p><strong>Billing Cycle:</strong> {{ current_user_subscription.billing_cycle }}</p>
+
+            {% if current_user_subscription.status == 'active' %}
+              <a href="{{ url_for('file_upload_blueprint.download_exe') }}" class="btn btn-success mt-3">
+                <i class="fas fa-download"></i> Download Executable File
+              </a>
+            {% endif %}
+          {% else %}
+            <div class="alert alert-warning">
+              You are not subscribed to any plan. Please contact the administrator for assistance.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  <script src="/static/assets/plugins/jquery/jquery.min.js"></script>
+  <script src="/static/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/assets/js/adminlte.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      $('#flash-container .alert').each(function () {
+        setTimeout(() => $(this).alert('close'), 4000);
+      });
+    });
+  </script>
+{% endblock %}

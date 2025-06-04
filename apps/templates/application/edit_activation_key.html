@@ -1,0 +1,125 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Edit Activation Key{% endblock %}
+
+{% block body_class %}sidebar-mini layout-fixed layout-footer-fixed{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+<link rel="stylesheet" href="/static/assets/plugins/fontawesome-free/css/all.min.css">
+<link rel="stylesheet" href="/static/assets/css/adminlte.min.css">
+<style>
+  .alert-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: 90%;
+    display: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="alert-container" id="flashMessageContainer">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <strong>{{ message }}</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Page Header -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6"><h1>Edit Activation Key</h1></div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="/dashboard">Home</a></li>
+            <li class="breadcrumb-item"><a href="/application">Activation Keys</a></li>
+            <li class="breadcrumb-item active">Edit Key</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Form Section -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-primary">
+        <div class="card-header"><h3 class="card-title">Update Activation Key Info</h3></div>
+
+        <form method="POST" action="{{ url_for('application_blueprint.edit_activation_key', key_id=activation_key.id) }}">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+          <div class="card-body">
+
+            <!-- Activation Key (Read-only) -->
+            <div class="form-group">
+              <label for="activation_key">Activation Key</label>
+              <input type="text" class="form-control" id="activation_key" value="{{ activation_key.activation_key }}" disabled>
+            </div>
+
+            <!-- Subscription Plan Dropdown -->
+            <div class="form-group">
+              <label for="subscription_plan_id">Subscription Plan</label>
+              <select name="subscription_plan_id" id="subscription_plan_id" class="form-control" required>
+                <option value="" disabled>Select a plan</option>
+                {% for plan in plans %}
+                  <option value="{{ plan.plan_id }}" {% if plan.plan_id == activation_key.subscription_plan_id %}selected{% endif %}>
+                    {{ plan.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- MAC Address -->
+            <div class="form-group">
+              <label for="mac_address">MAC Address</label>
+              <input type="text" name="mac_address" id="mac_address" class="form-control"
+                     value="{{ activation_key.mac_address or '' }}" placeholder="e.g. 00:1A:2B:3C:4D:5E">
+            </div>
+
+            <!-- Device ID -->
+            <div class="form-group">
+              <label for="device_id">Device ID</label>
+              <input type="text" name="device_id" id="device_id" class="form-control"
+                     value="{{ activation_key.device_id or '' }}" placeholder="Unique Device ID">
+            </div>
+
+          </div>
+
+          <div class="card-footer">
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="{{ url_for('application_blueprint.application') }}" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="/static/assets/plugins/jquery/jquery.min.js"></script>
+<script src="/static/assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/static/assets/js/adminlte.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('#flashMessageContainer').fadeIn(300).delay(3000).fadeOut(1000);
+  });
+</script>
+{% endblock %}
